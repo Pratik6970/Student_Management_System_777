@@ -1,0 +1,38 @@
+
+
+
+
+services:
+  mysql:
+    image: mysql:8.0.27
+    container_name: mysql_database_9893
+    environment:
+      MYSQL_ROOT_PASSWORD: Pratik@123456
+      MYSQL_DATABASE: blog
+    ports:
+      - "3319:3306"  # Exposing MySQL port 3306 to the host machine on port 3307
+    volumes:
+      - ./mysql_data:/var/lib/mysql  # Persistent storage for MySQL data
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]  # Checking MySQL readiness
+      interval: 30s  # Interval between health checks
+      retries: 3  # Number of retries before marking the service as unhealthy
+      start_period: 10s  # Delay before starting health checks
+      timeout: 10s  # Timeout for the health check
+
+  springboot:
+    build: .  # Build Spring Boot app from the Dockerfile in the current directory
+    container_name: spring_mvc_1
+    environment:
+      SERVER_PORT: 8080  # Spring Boot app running on internal port 8080
+      MYSQL_HOST: mysql  # Pointing to the MySQL container by its service name
+      MYSQL_PORT: 3306  # MySQL default port
+      MYSQL_DB: blog  # Database name
+      MYSQL_USER: root  # MySQL username
+      MYSQL_PASSWORD: Pratik@123456  # MySQL password
+    ports:
+      - "9773:8080"  # Exposing Spring Boot app on port 8082 on the host
+    depends_on:
+      mysql:
+        condition: service_healthy  # Ensures MySQL is healthy before Spring Boot starts
+    command: ["sh", "-c", "until nc -z mysql 3306; do sleep 1; done; java -jar /app/Student_Management_MVC_111-0.0.1-SNAPSHOT.jar"]  # Wait for MySQL to be ready before Spring Boot starts
